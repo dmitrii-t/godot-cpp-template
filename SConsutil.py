@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Iterator
 
+import SCons.Node.FS
 from SCons.Script import *
 
 # Get the "Godot" folder name ahead of time
@@ -14,12 +15,21 @@ _scu_folders = set()
 
 def add_to_vs_project(env, sources):
     for x in sources:
-        if isinstance(x, SCons.Node.FS.File):
+        if isinstance(x, SCons.Node.FS.Dir):
+            sources.extend(x.glob("./*/*"))  # Recurse into subdir
+            sources.extend(x.glob("./*.h"))
+            sources.extend(x.glob("./*.?pp"))
+            continue
+        elif isinstance(x, SCons.Node.FS.File):
             fname = x.path
+        elif isinstance(x, list):
+            sources.extend(x)
+            continue
         elif type(x) == type(""):
             fname = env.File(x).path
         else:
             fname = env.File(x)[0].path
+        print(fname)
         pieces = fname.split(".")
         if len(pieces) > 0:
             basename = pieces[0]
