@@ -7,7 +7,7 @@ from SConsutil import *
 # libgdextension name
 libname = "gdextension"
 # godot binary to run demo project
-godot_exec = f'godot\\Godot_v4.1.2-stable_win64.exe'
+run_cmd = "Run.cmd"
 # godot demo project
 projectdir = "demo"
 # sln filename
@@ -87,7 +87,7 @@ if localEnv.get("vsproj", False):
     add_to_vs_project(env, Glob("godot-cpp/gen/include/godot_cpp/*"))
     add_to_vs_project(env, env.libgdextension_sources)
 
-    vsproj = generate_vs_project_target(env, ARGUMENTS, godot_exec, sln_name)
+    vsproj = generate_vs_project_target(env, ARGUMENTS, run_cmd, sln_name)
     generate_cpp_hint_file("cpp.hint")
 
     env.Alias("vsproj", vsproj)

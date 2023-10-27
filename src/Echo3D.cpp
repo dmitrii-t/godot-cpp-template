@@ -8,12 +8,24 @@ using namespace godot;
 
 void Echo3D::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("_process", "delta"), &Echo3D::_process);
+	// No need to bind godot pre-defined methods
+
+	// Bind Cpp method
+	ClassDB::bind_method(D_METHOD("echo", "msg"), &Echo3D::echo);
+
+	// Add a signal to invoke GDScript
+	ADD_SIGNAL(MethodInfo("echo_signal", PropertyInfo(Variant::STRING, "msg")));
+}
+
+void Echo3D::echo(String msg)
+{
+	UtilityFunctions::print("Echo3D::echo: ", msg);
 }
 
 void Echo3D::_process(double delta)
 {
-	UtilityFunctions::print("EchoNode3D::_proces(%d)", delta);
+	String msg = "EchoNode3D::_process: " + String::num(delta);
+	echo(msg);
 }
 
 Echo3D::Echo3D()

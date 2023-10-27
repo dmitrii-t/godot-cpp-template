@@ -12,7 +12,8 @@ namespace godot
 
 	public:
 		void _process(double delta);
-
+		void echo(String msg);
+		
 		Echo3D();
 		~Echo3D();
 
