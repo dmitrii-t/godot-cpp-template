@@ -3,7 +3,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "Echo3D.h"
+#include "Example.h"
 #include "register_types.h"
 
 using namespace godot;
@@ -14,7 +14,7 @@ void initialize_libgdextension_types(ModuleInitializationLevel p_level)
 	{
 		return;
 	}
-	ClassDB::register_class<Echo3D>();
+	ClassDB::register_class<Example>();
 }
 
 void uninitialize_libgdextension_types(ModuleInitializationLevel p_level)
