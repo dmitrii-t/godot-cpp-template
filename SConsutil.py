@@ -1,4 +1,6 @@
-﻿from collections.abc import Mapping
+﻿import re
+
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Iterator
 
@@ -78,7 +80,7 @@ def generate_cpp_hint_file(filename):
             print("Could not write cpp.hint file.")
 
 
-def generate_vs_project_target(env, original_args, godot_exec, sln_name):
+def generate_vs_project_target(env, original_args, godot_dir, project_dir, sln_name):
     batch_file = find_visual_c_batch_file(env)
     filtered_args = original_args.copy()
     # Ignore the "vsproj" option to not regenerate the VS project on every build
@@ -92,6 +94,47 @@ def generate_vs_project_target(env, original_args, godot_exec, sln_name):
 
     if batch_file:
         print("found vs batch_file: %s" % batch_file)
+
+        def find_godot_exec(arch):
+            godot_exec_pattern = fr'^Godot_v4.1.2-stable_win{arch}.exe$' 
+            godot_exec_args = [
+                # enables debug connection
+                '--debug-server tcp://127.0.0.1:6007', 
+                # starts the project skipping the editor
+                f'--path .\\{project_dir}\n'
+            ]     
+                
+            for root, dirs, files in os.walk(godot_dir):
+                for file_name in files:
+                    if re.match(godot_exec_pattern, file_name):
+                        godot_exec_path = os.path.join(root, file_name)
+                        return ' '.join([godot_exec_path] + godot_exec_args)         
+            return f'echo Error: Godot exec for win{arch} is missing in the dir {godot_dir}'
+                        
+
+        def create_run_bat_file(platform):
+            arch = '64'
+            if 'x86_64' == platform:
+                arch = '64'
+            if 'x86_32' == platform:
+                arch = '32' 
+        
+            file_path = f'Run_demo_{platform}.bat'
+            
+            # If the file already exists return path to the file
+            if os.path.exists(file_path):
+                print(f'{file_path} file already exists.')
+                return file_path
+
+            godot_exec = find_godot_exec(arch)
+
+            # Create the file
+            with open(file_path, 'w') as file:
+                file.write("REM Starts the game\n")
+                file.write(f"{godot_exec}")
+
+            print(f'{file_path} file created successfully.')
+            return file_path
 
         class ModuleConfigs(Mapping):
             # This version information (Win32, x64, Debug, Release) seems to be
@@ -135,7 +178,7 @@ def generate_vs_project_target(env, original_args, godot_exec, sln_name):
                     for platform in ModuleConfigs.PLATFORMS
                 ]
                 self.arg_dict["runfile"] += [
-                    godot_exec
+                    create_run_bat_file(plat_id)
                     for config in ModuleConfigs.CONFIGURATIONS
                     for plat_id in ModuleConfigs.PLATFORM_IDS
                 ]
@@ -192,7 +235,7 @@ def generate_vs_project_target(env, original_args, godot_exec, sln_name):
         module_configs = ModuleConfigs()
 
         env["MSVSBUILDCOM"] = module_configs.build_commandline(".\\venv\\Scripts\\scons.exe debug_symbols=yes")
-        env["MSVSREBUILDCOM"] = module_configs.build_commandline(".\\venv\\Scripts\\scons.exe --no-cache debug_symbols=yes vsproj=yes")
+        env["MSVSREBUILDCOM"] = module_configs.build_commandline(".\\venv\\Scripts\\scons.exe debug_symbols=yes vsproj=yes")
         env["MSVSCLEANCOM"] = module_configs.build_commandline(".\\venv\\Scripts\\scons.exe --clean")
         if not env.get("MSVS"):
             env["MSVS"]["PROJECTSUFFIX"] = ".vcxproj"

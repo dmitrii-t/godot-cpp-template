@@ -49,3 +49,11 @@ compile_commands.json
 # VSCode
 .vscode/*
 !.vscode/extensions.json
+
+# Generated VS project configs
+Run_*
+*.sln
+*.vcxproj*
+
+# Hidden files
+.*
