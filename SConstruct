@@ -47,7 +47,7 @@ opts.Add(
         validator=validate_parent_dir,
     )
 )
-# vsproj
+# adds vsproj bool option to generate a project for Visual Studio when the option is set
 opts.Add(
     BoolVariable(
         key="vsproj",
