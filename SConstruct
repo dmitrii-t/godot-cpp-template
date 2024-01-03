@@ -4,10 +4,16 @@ import os
 from SCons.Script import *
 from SConsutil import *
 
-# libgdextension name
-libname = "gdextension"
+def normalize_path(val, env):
+    return val if os.path.isabs(val) else os.path.join(env.Dir("#").abspath, val)
 
-# godot demo project
+
+def validate_parent_dir(key, val, env):
+    if not os.path.isdir(normalize_path(os.path.dirname(val), env)):
+        raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
+
+
+libname = "EXTENSION-NAME"
 projectdir = "demo"
 
 # godot exec dir 
@@ -18,17 +24,7 @@ sln_dir = os.getcwd()
 sln_name = os.path.basename(sln_dir)
 
 # default targets
-default_targets = []
-
-
-def normalize_path(val, env):
-    return val if os.path.isabs(val) else os.path.join(env.Dir("#").abspath, val)
-
-
-def validate_parent_dir(key, val, env):
-    if not os.path.isdir(normalize_path(os.path.dirname(val), env)):
-        raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
-
+default_args = []
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
@@ -73,6 +69,7 @@ compilation_db = env.CompilationDatabase(
 env.Alias("compiledb", compilation_db)
 
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
+
 env.Append(CPPPATH=["src/"])
 env.libgdextension_sources = Glob("src/*.cpp")
 
@@ -87,25 +84,12 @@ library = env.SharedLibrary(
     libraryfile,
     source=env.libgdextension_sources,
 )
-default_targets += [library]
 
-projectlib = "{}/bin/{}/lib{}".format(projectdir, env["platform"], file)
+copy = env.InstallAs("{}/bin/{}/lib{}".format(projectdir, env["platform"], file), library)
 
-
-def copy_bin_to_projectdir(target, source, env):
-    import shutil
-
-    for sourcefile in source:
-        for targetfile in target:
-            shutil.copyfile(sourcefile.get_path(), targetfile.get_path())
-
-
-copy = env.Command(projectlib, libraryfile, copy_bin_to_projectdir)
-default_targets += [copy]
-
-# generate compile_database.json if compiledb=yes provided
+default_args = [library, copy]
 if localEnv.get("compiledb", False):
-    default_targets += [compilation_db]
+    default_args += [compilation_db]
 
 # generate visual studio project if vsproj=yes provided
 if localEnv.get("vsproj", False):
@@ -125,10 +109,7 @@ if localEnv.get("vsproj", False):
     generate_cpp_hint_file("cpp.hint")
 
     env.Alias("vsproj", vsproj)
-    default_targets += [vsproj]
+    default_args += [vsproj]
 
 # sets default targets
-Default(*default_targets)
-
-# dump environment variables for debugging
-dump(env)
+Default(*default_args)
